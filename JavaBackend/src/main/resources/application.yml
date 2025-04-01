@@ -1,0 +1,57 @@
+server:
+  address: 0.0.0.0
+  error:
+    include-message: always
+    include-binding-errors: always
+
+spring:
+  application:
+    name: JavaBackend
+  datasource:
+    url: ${JDBC_DATABASE_POSTGRESQL_URL}
+    username: ${JDBC_DATABASE_USERNAME}
+    password: ${JDBC_DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+  profiles:
+    active: dev
+
+grpc:
+  client:
+    host: ${GRPC_SERVER_HOST}
+    port: ${GRPC_SERVER_PORT}
+
+app:
+  admin:
+    password: ${DEFAULT_ADMIN_PASSWORD}
+
+jwt:
+  secret: ${JWT_SECRET}
+
+logging:
+  level:
+    root: INFO
+    org.springframework: WARN
+    org.springframework.security: WARN
+    antonBurshteyn: INFO
+  file:
+    path: logs/
+    max-size: 10MB
+    max-history: 30
+
+aop:
+  proxy-target-class: false
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html

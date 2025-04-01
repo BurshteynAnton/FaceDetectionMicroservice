@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+option java_package = "antonBurshteyn.facedetection.grpc";
+option java_outer_classname = "FaceDetectionProto";
+
+package facedetection;
+
+// gRPC service for detecting faces in images.
+service FaceDetectionService {
+  // Processes an image and returns detected faces.
+  rpc DetectFaces (ImageRequest) returns (FaceDetectionResponse);
+}
+
+// Request message containing an image in byte array format.
+message ImageRequest {
+  // Image data (e.g., JPEG or PNG format).
+  bytes image = 1;
+}
+
+// Response message containing a list of detected faces.
+message FaceDetectionResponse {
+  // List of detected faces in the image.
+  repeated Face faces = 1;
+}
+
+// Represents a single detected face.
+message Face {
+  // X-coordinate of the top-left corner of the face.
+  int32 x = 1;
+
+  // Y-coordinate of the top-left corner of the face.
+  int32 y = 2;
+
+  // Width of the detected face region.
+  int32 width = 3;
+
+  // Height of the detected face region.
+  int32 height = 4;
+
+  // Detection confidence score (range 0.0 to 1.0).
+  float confidence = 5;
+}

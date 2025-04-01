@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Management Panel</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+    />
+  </head>
+  <body class="bg-dark text-light">
+    <div class="container py-5">
+      <div class="text-end mb-3">
+        <a href="/" class="btn btn-outline-light">← Back to Main Page</a>
+      </div>
+      <h1 class="text-center mb-4">Management Panel</h1>
+
+      <div id="registrationSection" class="mb-4">
+        <h4>Register</h4>
+        <form id="registrationForm">
+          <input
+            type="text"
+            id="firstName"
+            class="form-control mb-2"
+            placeholder="First Name"
+            required
+          />
+          <input
+            type="text"
+            id="lastName"
+            class="form-control mb-2"
+            placeholder="Last Name"
+            required
+          />
+          <input
+            type="email"
+            id="email"
+            class="form-control mb-2"
+            placeholder="Email"
+            required
+          />
+          <input
+            type="password"
+            id="password"
+            class="form-control mb-2"
+            placeholder="Password"
+            required
+          />
+          <button type="submit" class="btn btn-primary w-100">Register</button>
+        </form>
+      </div>
+
+      <div id="authSection" class="mb-4">
+        <h4>Authenticate</h4>
+        <form id="authForm">
+          <input
+            type="email"
+            id="authEmail"
+            class="form-control mb-2"
+            placeholder="Email"
+            required
+          />
+          <input
+            type="password"
+            id="authPassword"
+            class="form-control mb-2"
+            placeholder="Password"
+            required
+          />
+          <button type="submit" class="btn btn-success w-100">Login</button>
+        </form>
+      </div>
+
+      <div id="actionsSection" class="d-none">
+        <h4 class="mt-4">Photo Actions</h4>
+
+        <div class="mb-3">
+          <label for="searchId" class="form-label">Search Photo by ID</label>
+          <input type="number" id="searchId" class="form-control mb-2" />
+          <button class="btn btn-outline-light w-100" onclick="searchPhoto()">
+            Search
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <label for="deleteId" class="form-label">Delete Photo by ID</label>
+          <input type="number" id="deleteId" class="form-control mb-2" />
+          <button class="btn btn-danger w-100" onclick="deletePhoto()">
+            Delete
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <button class="btn btn-info w-100" onclick="listPhotos()">
+            List All Photos
+          </button>
+          <ul id="photoList" class="list-group mt-3"></ul>
+        </div>
+      </div>
+
+      <div id="notificationArea" class="mt-4"></div>
+    </div>
+
+    <script>
+      const API_BASE = "";
+      let authToken = null;
+
+      document
+        .getElementById("registrationForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const body = JSON.stringify({
+            firstName: document.getElementById("firstName").value,
+            lastName: document.getElementById("lastName").value,
+            email: document.getElementById("email").value,
+            password: document.getElementById("password").value,
+          });
+          try {
+            const res = await fetch(`${API_BASE}/api/register`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body,
+            });
+            if (res.ok) {
+              notify("Registration successful!", "success");
+            } else {
+              notify("Registration failed", "danger");
+            }
+          } catch {
+            notify("Error during registration", "danger");
+          }
+        });
+
+      document
+        .getElementById("authForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const body = JSON.stringify({
+            email: document.getElementById("authEmail").value,
+            password: document.getElementById("authPassword").value,
+          });
+          try {
+            const res = await fetch(`${API_BASE}/api/login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body,
+            });
+            const data = await res.json();
+            if (res.ok && data.access_token) {
+              authToken = data.access_token;
+              document
+                .getElementById("registrationSection")
+                .classList.add("d-none");
+              document.getElementById("authSection").classList.add("d-none");
+              document
+                .getElementById("actionsSection")
+                .classList.remove("d-none");
+              notify("Authenticated successfully!", "success");
+            } else {
+              notify("Authentication failed", "danger");
+            }
+          } catch {
+            notify("Error during authentication", "danger");
+          }
+        });
+
+      async function searchPhoto() {
+        const id = document.getElementById("searchId").value;
+        try {
+          const res = await fetch(`${API_BASE}/api/photos/search/${id}`);
+          const text = await res.text();
+          if (res.ok) {
+            notify(`Photo name: ${text}`, "success");
+          } else {
+            notify(`Photo not found`, "warning");
+          }
+        } catch {
+          notify("Error during search", "danger");
+        }
+      }
+
+      async function deletePhoto() {
+        const id = document.getElementById("deleteId").value;
+        try {
+          const res = await fetch(`${API_BASE}/api/photos/delete/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${authToken}` },
+          });
+          if (res.status === 204) {
+            notify(`Photo deleted`, "success");
+          } else {
+            notify(`Delete failed`, "danger");
+          }
+        } catch {
+          notify("Error during delete", "danger");
+        }
+      }
+
+      async function listPhotos() {
+        try {
+          const res = await fetch(`${API_BASE}/api/photos/list`);
+          const data = await res.json();
+          const list = document.getElementById("photoList");
+          list.innerHTML = "";
+          data.forEach((photo) => {
+            const li = document.createElement("li");
+            li.classList.add("list-group-item", "bg-dark", "text-light");
+            li.innerText = photo;
+            list.appendChild(li);
+          });
+        } catch {
+          notify("Failed to list photos", "danger");
+        }
+      }
+
+      function notify(message, type) {
+        const area = document.getElementById("notificationArea");
+        area.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        setTimeout(() => (area.innerHTML = ""), 3000);
+      }
+    </script>
+  </body>
+</html>

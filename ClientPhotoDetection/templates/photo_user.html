@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Photo Upload Client</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+    />
+  </head>
+  <body class="bg-dark text-light">
+    <div class="container py-5">
+      <h1 class="text-center mb-4">Upload Photo</h1>
+
+      <form id="uploadForm" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label for="name" class="form-label">Name:</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            class="form-control"
+            placeholder="Enter your Name"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="surname" class="form-label">Surname:</label>
+          <input
+            type="text"
+            id="surname"
+            name="surname"
+            class="form-control"
+            placeholder="Enter Surname"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="file" class="form-label">Select photo:</label>
+          <input
+            type="file"
+            id="file"
+            name="file"
+            class="form-control"
+            accept="image/*"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">
+          Upload Photo
+        </button>
+      </form>
+
+      <button id="openCameraButton" class="btn btn-secondary w-100 mt-3">
+        Open Camera
+      </button>
+
+      <div id="cameraContainer" class="mt-4 text-center d-none">
+        <video
+          id="camera"
+          autoplay
+          playsinline
+          class="border rounded mb-3"
+        ></video>
+        <button id="captureButton" class="btn btn-primary mt-2">
+          Capture Photo
+        </button>
+      </div>
+
+      <div id="validationResult" class="mt-4 text-center d-none">
+        <div id="resultMessage" class="alert"></div>
+      </div>
+
+      <div class="text-center mt-5 pt-2">
+        <a href="/managment_panel" class="btn btn-outline-light">
+          Go to Management Panel
+        </a>
+      </div>
+
+      <div id="preview" class="mt-4 text-center">
+        <img
+          id="photoPreview"
+          src=""
+          class="img-fluid mt-3 d-none"
+          alt="Preview photo"
+        />
+        <button id="useCapturedButton" class="btn btn-success mt-3 d-none">
+          Use Captured Photo
+        </button>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+      const openCameraButton = document.getElementById("openCameraButton");
+      const cameraContainer = document.getElementById("cameraContainer");
+      const video = document.getElementById("camera");
+      const captureButton = document.getElementById("captureButton");
+      const photoPreview = document.getElementById("photoPreview");
+      const useCapturedButton = document.getElementById("useCapturedButton");
+
+      let capturedBlob = null;
+
+      openCameraButton.addEventListener("click", async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
+          video.srcObject = stream;
+          cameraContainer.classList.remove("d-none");
+          openCameraButton.stream = stream;
+        } catch (err) {
+          alert("Unable to access the camera: " + err.message);
+        }
+      });
+
+      captureButton.addEventListener("click", () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        capturedBlob = dataURLToBlob(canvas.toDataURL("image/jpeg"));
+        photoPreview.src = canvas.toDataURL("image/jpeg");
+        photoPreview.classList.remove("d-none");
+        useCapturedButton.classList.remove("d-none");
+
+        if (openCameraButton.stream) {
+          openCameraButton.stream.getTracks().forEach((track) => track.stop());
+        }
+        cameraContainer.classList.add("d-none");
+      });
+
+      useCapturedButton.addEventListener("click", () => {
+        if (capturedBlob) {
+          const fileInput = document.getElementById("file");
+          const capturedFile = new File([capturedBlob], "captured_photo.jpg", {
+            type: "image/jpeg",
+          });
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(capturedFile);
+          fileInput.files = dataTransfer.files;
+          alert("Captured photo selected for upload!");
+        } else {
+          alert("No photo captured yet.");
+        }
+      });
+
+      $("#uploadForm").on("submit", function (event) {
+        event.preventDefault();
+
+        const name = document.getElementById("name").value.trim();
+        const surname = document.getElementById("surname").value.trim();
+
+        if (!name || !surname) {
+          alert("Please enter your name and surname before uploading.");
+          return;
+        }
+
+        const formData = new FormData(this);
+        formData.set("name", `${name}_${surname}`);
+
+        fetch("/upload", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const resultDiv = document.getElementById("validationResult");
+            const resultMessage = document.getElementById("resultMessage");
+
+            resultDiv.classList.remove("d-none");
+            resultMessage.textContent = data.message;
+
+            if (data.status === "SUCCESS") {
+              resultMessage.className = "alert alert-success";
+            } else {
+              resultMessage.className = "alert alert-danger";
+            }
+
+            capturedBlob = null;
+          })
+          .catch((error) => {
+            console.error("Error uploading photo:", error);
+            alert("Failed to upload photo.");
+          });
+      });
+
+      function dataURLToBlob(dataURL) {
+        const parts = dataURL.split(",");
+        const byteString = atob(parts[1]);
+        const mimeString = parts[0].split(":")[1].split(";")[0];
+
+        const arrayBuffer = new ArrayBuffer(byteString.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
+
+        for (let i = 0; i < byteString.length; i++) {
+          uint8Array[i] = byteString.charCodeAt(i);
+        }
+
+        return new Blob([arrayBuffer], { type: mimeString });
+      }
+    </script>
+  </body>
+</html>

@@ -14,9 +14,9 @@ This project is a compact yet complete face detection system built with a polygl
 
 ## Project Showcase
 
-- [UI walkthrough video](./UI_presentation.mp4)
-- [Swagger API demo](./SWAGGER_doc.mp4)
-- [Example validation image](./PhotoForValidationExample/Valid_Example.jpg)
+- [UI walkthrough video](./UI_presentation.mp4) _(short demo, downloadable if not previewable)_
+- [Swagger API demo](./SWAGGER_doc.mp4) _(short demo, downloadable if not previewable)_
+- 📂 Example validation images can be found in the `PhotoForValidationExample/` folder
 
 ## Key Engineering Challenges
 

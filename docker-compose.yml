@@ -9,13 +9,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - JDBC_DATABASE_POSTGRESQL_URL=jdbc:postgresql://postgres:5432/photo_db
-      - JDBC_DATABASE_USERNAME=postgres
-      - JDBC_DATABASE_PASSWORD=12121212
+      - JDBC_DATABASE_POSTGRESQL_URL=your_database
+      - JDBC_DATABASE_USERNAME=your_username
+      - JDBC_DATABASE_PASSWORD=your_password
       - GRPC_SERVER_HOST=grpc-valid-service
       - GRPC_SERVER_PORT=50051
-      - JWT_SECRET=M0+C3sE1FZqmPAxjTIb3YO0pcHg29ngSrKk2Z2GNaHw=
-      - DEFAULT_ADMIN_PASSWORD=Admin123!
+      - JWT_SECRET=your_secret
+      - DEFAULT_ADMIN_PASSWORD=your_password
     depends_on:
       - postgres
       - grpc-valid-service
